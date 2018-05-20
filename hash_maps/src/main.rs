@@ -94,7 +94,7 @@ fn main() {
 
     for word in text.split_whitespace() {
         let count = scores5.entry(word).or_insert(0); // returns a mutable reference
-        *count += 1;
+        *count += 1; // which we need to dereference to mutate
     }
 
     assert_eq!(scores5.get("hello"), Some(&1));
