@@ -1,3 +1,4 @@
+use std::env;
 use std::error::Error;
 use std::fs::File;
 use std::io::prelude::*;
@@ -8,6 +9,7 @@ const CONFIG_ARGS_ERR_MSG: &'static str = "not enough arguments (2 required)";
 pub struct Config {
     pub query: String,
     pub path: String,
+    pub case_sensitive: bool,
 }
 
 impl Config {
@@ -18,16 +20,26 @@ impl Config {
         Ok(Self {
             query: args[1].clone(),
             path: args[2].clone(),
+            case_sensitive: env::var("CASE_INSENSITIVE").is_err(),
         })
     }
 }
 
-pub fn run(cfg: Config) -> Result<(), Box<Error>> {
+pub fn run(cfg: Config) -> Result<Vec<String>, Box<Error>> {
     let contents = read_contents(cfg.path)?;
-    for line in search(&cfg.query, &contents) {
+    // TODO: clean this up with lamdas! (ch 13)
+    let results = if cfg.case_sensitive {
+        search(&cfg.query, &contents)
+    } else {
+        search_case_insensitive(&cfg.query, &contents)
+    };
+    for line in results.iter() {
         println!("{}", line);
     }
-    Ok(())
+    Ok(results
+        .iter()
+        .map(|_str| _str.to_string())
+        .collect::<Vec<String>>())
 }
 
 fn read_contents(path: String) -> Result<String, Box<Error>> {
@@ -49,6 +61,19 @@ fn search<'a>(query: &str, contents: &'a str) -> Vec<&'a str> {
     res
 }
 
+fn search_case_insensitive<'a>(query: &str, contents: &'a str) -> Vec<&'a str> {
+    let query = query.to_lowercase();
+    let mut res = Vec::new();
+
+    for line in contents.lines() {
+        if line.to_lowercase().contains(&query) {
+            res.push(line)
+        }
+    }
+
+    res
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -59,6 +84,7 @@ mod tests {
             Ok(Config {
                 query: "body".to_string(),
                 path: "poem.txt".to_string(),
+                case_sensitive: true,
             }),
             Config::new(&[
                 "path/to/binary".to_string(),
@@ -95,13 +121,30 @@ To an admiring bog!
     }
 
     #[test]
-    fn finds_search_result() {
+    fn performs_case_sensitive_search() {
         let query = "duct";
         let contents = "\
 Rust:
 safe, fast, productive.
 Pick three.
+Duct tape.
 ";
         assert_eq!(search(query, contents), vec!["safe, fast, productive."])
     }
+
+    #[test]
+    fn performs_case_insensitive_search() {
+        let query = "rUsT";
+        let contents = "\
+Rust:
+safe, fast, productive.
+Pick three.
+Trust me.
+";
+        assert_eq!(
+            search_case_insensitive(query, contents),
+            vec!["Rust:", "Trust me."]
+        )
+    }
+
 }
