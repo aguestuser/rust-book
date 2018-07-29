@@ -53,8 +53,7 @@ where
         }
     }
     fn value(&mut self, arg: A) -> B {
-        let val = self.values.entry(arg).or_insert((self.calculation)(arg));
-        *val
+        *self.values.entry(arg).or_insert((self.calculation)(arg))
     }
 }
 
@@ -89,4 +88,23 @@ fn cache_string_slice_lenghts() {
     assert_eq!(c.value(&"foo"), 3);
     assert_eq!(c.value(&"foos"), 4);
     assert_eq!(c.value(&"foo"), 3);
+}
+
+#[test]
+fn closing_over_an_int() {
+    let x = 4;
+    let equal_to_x = |z| z == x;
+    let y = 4;
+
+    assert!(equal_to_x(y));
+}
+
+#[test]
+fn closing_over_vector_by_moving() {
+    let x = vec![1, 2, 3];
+    let equal_to_x = move |z| z == x;
+    let y = vec![1, 2, 3];
+    // println!("can't use x here: {:?}", x); x has been moved
+
+    assert!(equal_to_x(y));
 }
