@@ -1,0 +1,8 @@
+[package]
+name = "art_1978"
+version = "0.1.0"
+authors = ["aguestuser <aguestuser@riseup.net>"]
+description = "a fake package i made as part of the "
+license = "MIT"
+
+[dependencies]
