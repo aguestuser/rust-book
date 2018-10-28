@@ -1,0 +1,8 @@
+[package]
+name = "adder"
+version = "0.1.0"
+authors = ["aguestuser <aguestuser@riseup.net>"]
+
+[dependencies]
+add-one = { path = "../add-one"}
+rand = "0.3.14"
